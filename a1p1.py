@@ -16,53 +16,88 @@ Options for L command:
 from pathlib import Path
 
 
-def get_contents(directory, recursive=False):
+def list_directory(
+    path, recursive=False, files_only=False, search_name=None, search_ext=None
+):
     """
-    Get files and directories from a path.
+    Print directory contents with depth-first traversal.
 
-    Returns:
-        Tuple of (files, directories) as sorted lists.
+    Order: files first, then directories (no alphabetical sorting - uses filesystem order).
+    If recursive: after printing a directory, immediately print its contents.
     """
-    files = []
-    directories = []
-
     try:
-        for item in directory.iterdir():
-            if item.is_file():
-                files.append(item)
-            elif item.is_dir():
-                directories.append(item)
-
-        files.sort()
-        directories.sort()
-
-        if recursive:
-            for subdir in list(directories):
-                sub_files, sub_dirs = get_contents(subdir, recursive=True)
-                files.extend(sub_files)
-                directories.extend(sub_dirs)
-
+        items = list(path.iterdir())
     except (PermissionError, FileNotFoundError):
-        pass
+        return
 
-    return files, directories
+    files = []
+    dirs = []
+
+    for item in items:
+        if item.is_file():
+            files.append(item)
+        elif item.is_dir():
+            dirs.append(item)
+
+    # Print files (with filters if specified)
+    for f in files:
+        if search_name is not None and f.name != search_name:
+            continue
+        if search_ext is not None:
+            ext = search_ext if search_ext.startswith(".") else "." + search_ext
+            if f.suffix != ext:
+                continue
+        print(f)
+
+    # Print each directory, then recurse into it if recursive mode
+    for d in dirs:
+        if not files_only:
+            print(d)
+        if recursive:
+            list_directory(
+                d,
+                recursive=True,
+                files_only=files_only,
+                search_name=search_name,
+                search_ext=search_ext,
+            )
 
 
-def filter_by_name(paths, name):
-    """Filter to only files matching exact name."""
-    return [p for p in paths if p.name == name]
+def parse_input(parts):
+    """
+    Parse options and parameters from input.
+
+    Returns: (options, option_param, error)
+    """
+    options = []
+    option_param = None
+    error = False
+
+    i = 2
+    while i < len(parts):
+        part = parts[i]
+        if part.startswith("-"):
+            opt_chars = part[1:]
+            for char in opt_chars:
+                options.append(char)
+                # -s and -e require a parameter
+                if char in ["s", "e"]:
+                    if i + 1 < len(parts) and not parts[i + 1].startswith("-"):
+                        i += 1
+                        option_param = parts[i]
+                    else:
+                        error = True
+        i += 1
+
+    return options, option_param, error
 
 
-def filter_by_extension(paths, extension):
-    """Filter to only files with given extension."""
-    # Fixed: Now handles both 'txt' and '.txt' formats
-    if not extension.startswith("."):
-        extension = "." + extension
-    return [p for p in paths if p.suffix == extension]
+def execute_list_command(path_str, options, option_param, error):
+    """Execute the L command."""
+    if error:
+        print("ERROR")
+        return
 
-
-def list_directory(path_str, options, option_param):
-    """List contents of a directory with options."""
     path = Path(path_str)
 
     if not path.exists() or not path.is_dir():
@@ -71,45 +106,20 @@ def list_directory(path_str, options, option_param):
 
     recursive = "r" in options
     files_only = "f" in options
-    search_name = "s" in options
-    search_ext = "e" in options
+    search_name = option_param if "s" in options else None
+    search_ext = option_param if "e" in options else None
 
-    files, directories = get_contents(path, recursive=recursive)
-
-    if search_name and option_param:
-        files = filter_by_name(files, option_param)
+    # -s and -e imply files only
+    if search_name is not None or search_ext is not None:
         files_only = True
 
-    if search_ext and option_param:
-        files = filter_by_extension(files, option_param)
-        files_only = True
-
-    for f in sorted(files):
-        print(f)
-
-    if not files_only:
-        for d in sorted(directories):
-            print(d)
-
-
-def parse_input(parts):
-    """Parse options and option parameter from input."""
-    options = []
-    option_param = ""
-
-    i = 2
-    while i < len(parts):
-        part = parts[i]
-        if part.startswith("-"):
-            opt = part[1:]
-            for char in opt:
-                options.append(char)
-            if opt in ["s", "e"] and i + 1 < len(parts):
-                i += 1
-                option_param = parts[i]
-        i += 1
-
-    return options, option_param
+    list_directory(
+        path,
+        recursive=recursive,
+        files_only=files_only,
+        search_name=search_name,
+        search_ext=search_ext,
+    )
 
 
 def main():
@@ -117,27 +127,26 @@ def main():
     while True:
         try:
             user_input = input()
-
-            parts = user_input.strip().split()
-
-            if not parts:
-                continue
-
-            command = parts[0].upper()
-
-            if command == "Q":
-                break
-            elif command == "L":
-                if len(parts) < 2:
-                    print("ERROR")
-                else:
-                    options, option_param = parse_input(parts)
-                    list_directory(parts[1], options, option_param)
-            else:
-                print("ERROR")
-
         except EOFError:
             break
+
+        parts = user_input.strip().split()
+
+        if not parts:
+            continue
+
+        command = parts[0].upper()
+
+        if command == "Q":
+            break
+        elif command == "L":
+            if len(parts) < 2:
+                print("ERROR")
+            else:
+                options, option_param, error = parse_input(parts)
+                execute_list_command(parts[1], options, option_param, error)
+        else:
+            print("ERROR")
 
 
 if __name__ == "__main__":
