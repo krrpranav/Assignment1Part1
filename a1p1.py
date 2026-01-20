@@ -1,13 +1,28 @@
 """
 ICS 32 Assignment 1 Part 1
 A simple file management tool that lists directory contents.
+
+Commands:
+    L - List the contents of a directory
+    Q - Quit the program
+
+Options for L command:
+    -r  Output directory content recursively
+    -f  Output only files, excluding directories
+    -s  Output only files that match a given file name
+    -e  Output only files that match a given file extension
 """
 
 from pathlib import Path
 
 
 def get_contents(directory, recursive=False):
-    """Get files and directories from a path, properly collecting all before returning."""
+    """
+    Get files and directories from a path.
+
+    Returns:
+        Tuple of (files, directories) as sorted lists.
+    """
     files = []
     directories = []
 
@@ -21,7 +36,6 @@ def get_contents(directory, recursive=False):
         files.sort()
         directories.sort()
 
-        # Fixed: Now we collect recursively and extend lists instead of printing
         if recursive:
             for subdir in list(directories):
                 sub_files, sub_dirs = get_contents(subdir, recursive=True)
@@ -41,8 +55,9 @@ def filter_by_name(paths, name):
 
 def filter_by_extension(paths, extension):
     """Filter to only files with given extension."""
-    # BUG: Not handling case where user types 'txt' instead of '.txt'
-    # This will fail to match anything if user doesn't include the dot
+    # Fixed: Now handles both 'txt' and '.txt' formats
+    if not extension.startswith("."):
+        extension = "." + extension
     return [p for p in paths if p.suffix == extension]
 
 
@@ -89,7 +104,6 @@ def parse_input(parts):
             opt = part[1:]
             for char in opt:
                 options.append(char)
-            # If -s or -e, next part is the parameter
             if opt in ["s", "e"] and i + 1 < len(parts):
                 i += 1
                 option_param = parts[i]
