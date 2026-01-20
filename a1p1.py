@@ -7,17 +7,32 @@ from pathlib import Path
 
 
 def list_directory(path_str):
-    """List contents of a directory."""
+    """List contents of a directory with files first, then directories."""
     path = Path(path_str)
 
     if not path.exists() or not path.is_dir():
         print("ERROR")
         return
 
-    # This just prints everything in whatever order iterdir gives (TO BE FIXED)
-    # Not sorting files before directories as required
-    for item in sorted(path.iterdir()):
-        print(item)
+    files = []
+    directories = []
+
+    # Separate files and directories
+    for item in path.iterdir():
+        if item.is_file():
+            files.append(item)
+        elif item.is_dir():
+            directories.append(item)
+
+    # Sort each list
+    files.sort()
+    directories.sort()
+
+    # Print files first, then directories
+    for f in files:
+        print(f)
+    for d in directories:
+        print(d)
 
 
 def main():
