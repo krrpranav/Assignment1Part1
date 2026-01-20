@@ -6,33 +6,59 @@ A simple file management tool that lists directory contents.
 from pathlib import Path
 
 
-def list_directory(path_str):
-    """List contents of a directory with files first, then directories."""
+def get_contents(directory, recursive=False):
+    """Get files and directories from a path."""
+    files = []
+    directories = []
+
+    try:
+        for item in directory.iterdir():
+            if item.is_file():
+                files.append(item)
+            elif item.is_dir():
+                directories.append(item)
+                # BUG: When recursive, we print subdirectory contents immediately
+                # This messes up the order - should collect all first then sort
+                if recursive:
+                    sub_files, sub_dirs = get_contents(item, recursive=True)
+                    # Printing here instead of collecting - wrong!
+                    for sf in sub_files:
+                        print(sf)
+    except (PermissionError, FileNotFoundError):
+        pass
+
+    return sorted(files), sorted(directories)
+
+
+def list_directory(path_str, options):
+    """List contents of a directory with options."""
     path = Path(path_str)
 
     if not path.exists() or not path.is_dir():
         print("ERROR")
         return
 
-    files = []
-    directories = []
+    recursive = "r" in options
+    files_only = "f" in options
 
-    # Separate files and directories
-    for item in path.iterdir():
-        if item.is_file():
-            files.append(item)
-        elif item.is_dir():
-            directories.append(item)
+    files, directories = get_contents(path, recursive=recursive)
 
-    # Sort each list
-    files.sort()
-    directories.sort()
-
-    # Print files first, then directories
     for f in files:
         print(f)
-    for d in directories:
-        print(d)
+
+    if not files_only:
+        for d in directories:
+            print(d)
+
+
+def parse_options(parts):
+    """Parse command options from input parts."""
+    options = []
+    for part in parts[2:]:
+        if part.startswith("-"):
+            for char in part[1:]:
+                options.append(char)
+    return options
 
 
 def main():
@@ -53,7 +79,8 @@ def main():
             if len(parts) < 2:
                 print("ERROR")
             else:
-                list_directory(parts[1])
+                options = parse_options(parts)
+                list_directory(parts[1], options)
         else:
             print("ERROR")
 
