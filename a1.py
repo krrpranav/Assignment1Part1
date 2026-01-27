@@ -110,7 +110,6 @@ def execute_list_command(path_str, options, option_param, error):
 
 def execute_create_command(parts):
     """Execute the C command to create a new .dsu file."""
-    # BUG: Not properly parsing -n option, just checking if parts exist
     if len(parts) < 2:
         print("ERROR")
         return
@@ -121,12 +120,20 @@ def execute_create_command(parts):
         print("ERROR")
         return
 
-    # BUG: Assuming filename is always parts[3], not checking for -n
-    if len(parts) < 4:
+    # Fixed: Properly parse -n option
+    filename = None
+    i = 2
+    while i < len(parts):
+        if parts[i] == "-n" and i + 1 < len(parts):
+            filename = parts[i + 1]
+            break
+        i += 1
+
+    if filename is None:
         print("ERROR")
         return
 
-    filename = parts[3]
+    # Create file with .dsu extension
     new_file = directory / (filename + ".dsu")
     new_file.touch()
     print(new_file)
