@@ -120,7 +120,6 @@ def execute_create_command(parts):
         print("ERROR")
         return
 
-    # Fixed: Properly parse -n option
     filename = None
     i = 2
     while i < len(parts):
@@ -133,10 +132,26 @@ def execute_create_command(parts):
         print("ERROR")
         return
 
-    # Create file with .dsu extension
     new_file = directory / (filename + ".dsu")
     new_file.touch()
     print(new_file)
+
+
+def execute_delete_command(parts):
+    """Execute the D command to delete a .dsu file."""
+    if len(parts) < 2:
+        print("ERROR")
+        return
+
+    file_path = Path(parts[1])
+
+    # BUG: Not checking if file has .dsu extension
+    if not file_path.exists() or not file_path.is_file():
+        print("ERROR")
+        return
+
+    file_path.unlink()
+    print(f"{file_path} DELETED")
 
 
 def main():
@@ -164,6 +179,8 @@ def main():
                 execute_list_command(parts[1], options, option_param, error)
         elif command == "C":
             execute_create_command(parts)
+        elif command == "D":
+            execute_delete_command(parts)
         else:
             print("ERROR")
 
