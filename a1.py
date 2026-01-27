@@ -132,9 +132,12 @@ def execute_create_command(parts):
         print("ERROR")
         return
 
-    new_file = directory / (filename + ".dsu")
-    new_file.touch()
-    print(new_file)
+    try:
+        new_file = directory / (filename + ".dsu")
+        new_file.touch()
+        print(new_file)
+    except (PermissionError, OSError):
+        print("ERROR")
 
 
 def execute_delete_command(parts):
@@ -153,8 +156,11 @@ def execute_delete_command(parts):
         print("ERROR")
         return
 
-    file_path.unlink()
-    print(f"{file_path} DELETED")
+    try:
+        file_path.unlink()
+        print(f"{file_path} DELETED")
+    except (PermissionError, OSError):
+        print("ERROR")
 
 
 def execute_read_command(parts):
@@ -173,18 +179,20 @@ def execute_read_command(parts):
         print("ERROR")
         return
 
-    # Read file contents
-    content = file_path.read_text()
+    try:
+        # Read file contents
+        content = file_path.read_text()
 
-    # Added - Check if file is empty
-    if content == "":
-        print("EMPTY")
-    else:
-        # Print each line without extra newline at end
-        lines = content.split("\n")
-        for line in lines:
-            if line:  # Skip empty lines at end
-                print(line)
+        # Check if file is empty
+        if content.strip() == "":
+            print("EMPTY")
+        else:
+            # Fixed: Print content directly, stripping trailing newline
+            print(content, end="")
+            if not content.endswith("\n"):
+                print()  # Add newline if not present
+    except (PermissionError, OSError):
+        print("ERROR")
 
 
 def main():
