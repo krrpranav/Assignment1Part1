@@ -7,6 +7,13 @@
 """
 ICS 32 Assignment 1
 A file management tool for working with directories and .dsu files.
+
+Commands:
+    L - List the contents of a directory
+    C - Create a new .dsu file
+    D - Delete a .dsu file
+    R - Read the contents of a .dsu file
+    Q - Quit the program
 """
 
 from pathlib import Path
@@ -30,9 +37,11 @@ def list_directory(
         elif item.is_dir():
             dirs.append(item)
 
+    # Sort alphabetically
     files.sort()
     dirs.sort()
 
+    # Print files (with filters if specified)
     for f in files:
         if search_name is not None and f.name != search_name:
             continue
@@ -42,6 +51,7 @@ def list_directory(
                 continue
         print(f)
 
+    # Print each directory, then recurse into it if recursive mode
     for d in dirs:
         if not files_only:
             print(d)
@@ -68,7 +78,7 @@ def parse_input(parts):
             opt_chars = part[1:]
             for char in opt_chars:
                 options.append(char)
-                if char in ["s", "e"]:
+                if char in ["s", "e", "n"]:
                     if i + 1 < len(parts) and not parts[i + 1].startswith("-"):
                         i += 1
                         option_param = parts[i]
@@ -120,6 +130,7 @@ def execute_create_command(parts):
         print("ERROR")
         return
 
+    # Parse -n option
     filename = None
     i = 2
     while i < len(parts):
@@ -180,17 +191,14 @@ def execute_read_command(parts):
         return
 
     try:
-        # Read file contents
         content = file_path.read_text()
 
-        # Check if file is empty
         if content.strip() == "":
             print("EMPTY")
         else:
-            # Fixed: Print content directly, stripping trailing newline
-            print(content, end="")
-            if not content.endswith("\n"):
-                print()  # Add newline if not present
+            # Print each line of content
+            for line in content.splitlines():
+                print(line)
     except (PermissionError, OSError):
         print("ERROR")
 
