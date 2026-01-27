@@ -145,7 +145,6 @@ def execute_delete_command(parts):
 
     file_path = Path(parts[1])
 
-    # Fixed: Check if file has .dsu extension
     if not file_path.exists() or not file_path.is_file():
         print("ERROR")
         return
@@ -156,6 +155,24 @@ def execute_delete_command(parts):
 
     file_path.unlink()
     print(f"{file_path} DELETED")
+
+
+def execute_read_command(parts):
+    """Execute the R command to read a .dsu file."""
+    if len(parts) < 2:
+        print("ERROR")
+        return
+
+    file_path = Path(parts[1])
+
+    # BUG: Not checking if file has .dsu extension
+    if not file_path.exists() or not file_path.is_file():
+        print("ERROR")
+        return
+
+    # Read and print file contents
+    content = file_path.read_text()
+    print(content)
 
 
 def main():
@@ -185,6 +202,8 @@ def main():
             execute_create_command(parts)
         elif command == "D":
             execute_delete_command(parts)
+        elif command == "R":
+            execute_read_command(parts)
         else:
             print("ERROR")
 
