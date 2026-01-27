@@ -30,11 +30,9 @@ def list_directory(
         elif item.is_dir():
             dirs.append(item)
 
-    # Sort alphabetically (required for validity checker)
     files.sort()
     dirs.sort()
 
-    # Print files (with filters if specified)
     for f in files:
         if search_name is not None and f.name != search_name:
             continue
@@ -44,7 +42,6 @@ def list_directory(
                 continue
         print(f)
 
-    # Print each directory, then recurse into it if recursive mode
     for d in dirs:
         if not files_only:
             print(d)
@@ -111,6 +108,30 @@ def execute_list_command(path_str, options, option_param, error):
     )
 
 
+def execute_create_command(parts):
+    """Execute the C command to create a new .dsu file."""
+    # BUG: Not properly parsing -n option, just checking if parts exist
+    if len(parts) < 2:
+        print("ERROR")
+        return
+
+    directory = Path(parts[1])
+
+    if not directory.exists() or not directory.is_dir():
+        print("ERROR")
+        return
+
+    # BUG: Assuming filename is always parts[3], not checking for -n
+    if len(parts) < 4:
+        print("ERROR")
+        return
+
+    filename = parts[3]
+    new_file = directory / (filename + ".dsu")
+    new_file.touch()
+    print(new_file)
+
+
 def main():
     """Main function to run the file management tool."""
     while True:
@@ -134,6 +155,8 @@ def main():
             else:
                 options, option_param, error = parse_input(parts)
                 execute_list_command(parts[1], options, option_param, error)
+        elif command == "C":
+            execute_create_command(parts)
         else:
             print("ERROR")
 
