@@ -165,8 +165,12 @@ def execute_read_command(parts):
 
     file_path = Path(parts[1])
 
-    # BUG: Not checking if file has .dsu extension
     if not file_path.exists() or not file_path.is_file():
+        print("ERROR")
+        return
+
+    # Fixed: Check if file has .dsu extension
+    if file_path.suffix != ".dsu":
         print("ERROR")
         return
 
