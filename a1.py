@@ -1,31 +1,17 @@
 # a1.py
-
+#
 # NAME: Pranav
 # EMAIL: pkumar4@uci.edu
 # STUDENT ID: 63767742
 
-"""
-ICS 32 Assignment 1
-A file management tool for working with directories and .dsu files.
-
-Commands:
-    L - List the contents of a directory
-    C - Create a new .dsu file
-    D - Delete a .dsu file
-    R - Read the contents of a .dsu file
-    Q - Quit the program
-"""
-
 from pathlib import Path
 
 
-def list_directory(
-    path, recursive=False, files_only=False, search_name=None, search_ext=None
-):
-    """Print directory contents with depth-first traversal."""
+def list_directory(path, recursive, files_only, search_name, search_ext):
+    """List directory contents."""
     try:
         items = list(path.iterdir())
-    except (PermissionError, FileNotFoundError):
+    except (PermissionError, FileNotFoundError, NotADirectoryError):
         return
 
     files = []
@@ -37,11 +23,9 @@ def list_directory(
         elif item.is_dir():
             dirs.append(item)
 
-    # Sort alphabetically
     files.sort()
     dirs.sort()
 
-    # Print files (with filters if specified)
     for f in files:
         if search_name is not None and f.name != search_name:
             continue
@@ -51,22 +35,15 @@ def list_directory(
                 continue
         print(f)
 
-    # Print each directory, then recurse into it if recursive mode
     for d in dirs:
         if not files_only:
             print(d)
         if recursive:
-            list_directory(
-                d,
-                recursive=True,
-                files_only=files_only,
-                search_name=search_name,
-                search_ext=search_ext,
-            )
+            list_directory(d, recursive, files_only, search_name, search_ext)
 
 
-def parse_input(parts):
-    """Parse options and parameters from input."""
+def parse_options(parts):
+    """Parse options from input parts."""
     options = []
     option_param = None
     error = False
@@ -75,10 +52,9 @@ def parse_input(parts):
     while i < len(parts):
         part = parts[i]
         if part.startswith("-"):
-            opt_chars = part[1:]
-            for char in opt_chars:
+            for char in part[1:]:
                 options.append(char)
-                if char in ["s", "e", "n"]:
+                if char in ["s", "e"]:
                     if i + 1 < len(parts) and not parts[i + 1].startswith("-"):
                         i += 1
                         option_param = parts[i]
@@ -89,13 +65,19 @@ def parse_input(parts):
     return options, option_param, error
 
 
-def execute_list_command(path_str, options, option_param, error):
-    """Execute the L command."""
+def handle_list(parts):
+    """Handle L command."""
+    if len(parts) < 2:
+        print("ERROR")
+        return
+
+    options, option_param, error = parse_options(parts)
+
     if error:
         print("ERROR")
         return
 
-    path = Path(path_str)
+    path = Path(parts[1])
 
     if not path.exists() or not path.is_dir():
         print("ERROR")
@@ -109,18 +91,12 @@ def execute_list_command(path_str, options, option_param, error):
     if search_name is not None or search_ext is not None:
         files_only = True
 
-    list_directory(
-        path,
-        recursive=recursive,
-        files_only=files_only,
-        search_name=search_name,
-        search_ext=search_ext,
-    )
+    list_directory(path, recursive, files_only, search_name, search_ext)
 
 
-def execute_create_command(parts):
-    """Execute the C command to create a new .dsu file."""
-    if len(parts) < 2:
+def handle_create(parts):
+    """Handle C command."""
+    if len(parts) < 4:
         print("ERROR")
         return
 
@@ -130,18 +106,11 @@ def execute_create_command(parts):
         print("ERROR")
         return
 
-    # Parse -n option
-    filename = None
-    i = 2
-    while i < len(parts):
-        if parts[i] == "-n" and i + 1 < len(parts):
-            filename = parts[i + 1]
-            break
-        i += 1
-
-    if filename is None:
+    if parts[2] != "-n":
         print("ERROR")
         return
+
+    filename = parts[3]
 
     try:
         new_file = directory / (filename + ".dsu")
@@ -151,19 +120,19 @@ def execute_create_command(parts):
         print("ERROR")
 
 
-def execute_delete_command(parts):
-    """Execute the D command to delete a .dsu file."""
-    if len(parts) < 2:
+def handle_delete(parts):
+    """Handle D command."""
+    if len(parts) != 2:
         print("ERROR")
         return
 
     file_path = Path(parts[1])
 
-    if not file_path.exists() or not file_path.is_file():
+    if file_path.suffix != ".dsu":
         print("ERROR")
         return
 
-    if file_path.suffix != ".dsu":
+    if not file_path.exists() or not file_path.is_file():
         print("ERROR")
         return
 
@@ -174,29 +143,28 @@ def execute_delete_command(parts):
         print("ERROR")
 
 
-def execute_read_command(parts):
-    """Execute the R command to read a .dsu file."""
-    if len(parts) < 2:
+def handle_read(parts):
+    """Handle R command."""
+    if len(parts) != 2:
         print("ERROR")
         return
 
     file_path = Path(parts[1])
 
-    if not file_path.exists() or not file_path.is_file():
+    if file_path.suffix != ".dsu":
         print("ERROR")
         return
 
-    if file_path.suffix != ".dsu":
+    if not file_path.exists() or not file_path.is_file():
         print("ERROR")
         return
 
     try:
         content = file_path.read_text()
 
-        if content.strip() == "":
+        if content == "":
             print("EMPTY")
         else:
-            # Print each line of content
             for line in content.splitlines():
                 print(line)
     except (PermissionError, OSError):
@@ -204,7 +172,7 @@ def execute_read_command(parts):
 
 
 def main():
-    """Main function to run the file management tool."""
+    """Main function."""
     while True:
         try:
             user_input = input()
@@ -221,17 +189,13 @@ def main():
         if command == "Q":
             break
         elif command == "L":
-            if len(parts) < 2:
-                print("ERROR")
-            else:
-                options, option_param, error = parse_input(parts)
-                execute_list_command(parts[1], options, option_param, error)
+            handle_list(parts)
         elif command == "C":
-            execute_create_command(parts)
+            handle_create(parts)
         elif command == "D":
-            execute_delete_command(parts)
+            handle_delete(parts)
         elif command == "R":
-            execute_read_command(parts)
+            handle_read(parts)
         else:
             print("ERROR")
 
