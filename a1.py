@@ -169,14 +169,22 @@ def execute_read_command(parts):
         print("ERROR")
         return
 
-    # Fixed: Check if file has .dsu extension
     if file_path.suffix != ".dsu":
         print("ERROR")
         return
 
-    # Read and print file contents
+    # Read file contents
     content = file_path.read_text()
-    print(content)
+
+    # Added - Check if file is empty
+    if content == "":
+        print("EMPTY")
+    else:
+        # Print each line without extra newline at end
+        lines = content.split("\n")
+        for line in lines:
+            if line:  # Skip empty lines at end
+                print(line)
 
 
 def main():
