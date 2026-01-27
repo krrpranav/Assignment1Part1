@@ -1,16 +1,12 @@
+# a1.py
+
+# NAME: Pranav
+# EMAIL: pkumar4@uci.edu
+# STUDENT ID: 63767742
+
 """
-ICS 32 Assignment 1 Part 1
-A simple file management tool that lists directory contents.
-
-Commands:
-    L - List the contents of a directory
-    Q - Quit the program
-
-Options for L command:
-    -r  Output directory content recursively
-    -f  Output only files, excluding directories
-    -s  Output only files that match a given file name
-    -e  Output only files that match a given file extension
+ICS 32 Assignment 1
+A file management tool for working with directories and .dsu files.
 """
 
 from pathlib import Path
@@ -19,12 +15,7 @@ from pathlib import Path
 def list_directory(
     path, recursive=False, files_only=False, search_name=None, search_ext=None
 ):
-    """
-    Print directory contents with depth-first traversal.
-
-    Order: files first, then directories (no alphabetical sorting - uses filesystem order).
-    If recursive: after printing a directory, immediately print its contents.
-    """
+    """Print directory contents with depth-first traversal."""
     try:
         items = list(path.iterdir())
     except (PermissionError, FileNotFoundError):
@@ -38,6 +29,10 @@ def list_directory(
             files.append(item)
         elif item.is_dir():
             dirs.append(item)
+
+    # Sort alphabetically (required for validity checker)
+    files.sort()
+    dirs.sort()
 
     # Print files (with filters if specified)
     for f in files:
@@ -64,11 +59,7 @@ def list_directory(
 
 
 def parse_input(parts):
-    """
-    Parse options and parameters from input.
-
-    Returns: (options, option_param, error)
-    """
+    """Parse options and parameters from input."""
     options = []
     option_param = None
     error = False
@@ -80,7 +71,6 @@ def parse_input(parts):
             opt_chars = part[1:]
             for char in opt_chars:
                 options.append(char)
-                # -s and -e require a parameter
                 if char in ["s", "e"]:
                     if i + 1 < len(parts) and not parts[i + 1].startswith("-"):
                         i += 1
@@ -109,7 +99,6 @@ def execute_list_command(path_str, options, option_param, error):
     search_name = option_param if "s" in options else None
     search_ext = option_param if "e" in options else None
 
-    # -s and -e imply files only
     if search_name is not None or search_ext is not None:
         files_only = True
 
